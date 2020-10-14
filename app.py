@@ -5,11 +5,15 @@ from tkinter import ttk
 from tkinter import scrolledtext as st
 from requestHandler import Request
 import json
+import json2table
 from collections import OrderedDict
 import pyperclip as pc
 import os
 import os.path
 from os import path
+from html5print import HTMLBeautifier as hb
+import webbrowser
+
 
 def errBox(s):
     messagebox.showinfo("Message",s)
@@ -30,7 +34,7 @@ def wrMem(url,time,req,pay,respH,code="NA"):
     f.write(wr+"\n")
     f.close()
     f = open("time.txt","a")
-    f.write(time+"\n")
+    f.write(time+"~/@/~" + url + "\n")
     f.close()
 
 def readMem(time):
@@ -96,8 +100,33 @@ def win1(event):
     #         headerTreeH.delete(*headerTreeH.get_children())
 
 
+    def rspBody():
+        tx = requestOptionsH.get()
+        time,url,req,pay,code,respH = readMem(tx)
+        try :
+            ty = respH["Content-Type"]
+        except:
+            try:
+                ty = respH["content-type"]
+            except:
+                errBox("Cannot find content type")
+                return
+        tx = "resp" + tx.replace(" ","_").replace(":","")
+        if "text" in ty:
+            try:
+                with open("{0}.txt".format(tx),encoding='utf-8') as f:
+                    ret = f.read()
+                    f1 = open("{0}.html".format(tx),"w+",encoding = 'utf-8')
+                    f1.write(ret)
+                    webbrowser.open('file://' + os.path.realpath("{0}.txt".format(tx)))
+                    webbrowser.open('file://' + os.path.realpath("{0}.html".format(tx)))
+            except Exception as e:
+                print(e)
+                errBox("File lost, please send request again")   
+        elif "json" in ty:
+            webbrowser.open('file://' + os.path.realpath("{0}.html".format(tx)))
 
-
+                
     def copyclp():
         tx = requestOptionsH.get()
         time,url,req,pay,status_codeH,respH = readMem(tx)
@@ -169,7 +198,7 @@ def win1(event):
     historyLabel.place(x=600,y=10)
     # Request options
     f = open("time.txt")
-    optionsH = [i for i in f.read().split("\n") if len(i)>0]
+    optionsH = [i.split("~/@/~")[0] for i in f.read().split("\n") if len(i)>0]
     # print("%%% options =",optionsH,"\nlen =",len(optionsH))
     requestOptionsH = ttk.Combobox(window1,value=optionsH,width=22,font="Arial 11")
     # requestOptions.current(0)
@@ -212,6 +241,10 @@ def win1(event):
     # Delete All History
     delButton = Button(window1,text="Delete History",command=delH,width=14,bg="orange",fg="black",relief="raised",font="Arial 12 bold")
     delButton.place(x=1180,y=550)
+
+    #View response body (text)
+    vwtButton = Button(window1,text="Response Body",command=rspBody,width=14,bg="orange",fg="black",relief="raised",font="Arial 12 bold")
+    vwtButton.place(x=70,y=450)
 
     # Completed label
     cmplt = Label(window1,text="",font="Arial 15 bold",fg="#212F3C",bg="white",width=14)
@@ -326,7 +359,7 @@ def sendRequest():
         return
 
     try:
-        status_code,responseHeaders = req.sndreq(reqtype=requestType,headers=headers,payload=payload)
+        status_code,responseHeaders,respbody = req.sndreq(reqtype=requestType,headers=headers,payload=payload)
         # print(req.sndreq(reqtype=requestType,headers=headers,payload=payload))
         if status_code == 200:
             responseStatusCodeLabel.config(text="Response code: "+ str(status_code),bg="#58D68D")
@@ -336,7 +369,29 @@ def sendRequest():
             responseStatusCodeLabel.config(text="Response code: "+ str(status_code),bg="#F4D03F")
         maketable(dict(responseHeaders))
         wrMem(urlBox.get(),responseHeaders["Date"],headerBox.get("1.0","end-1c"),payloadBox.get("1.0","end-1c"),responseHeaders,status_code)
-
+        try:
+            ty = responseHeaders["Content-Type"]
+        except:
+            try:
+                ty = responseHeaders["content-type"]
+            except:
+                errBox("No content type found")
+        dt = responseHeaders["Date"]
+        dt = dt.replace(" ","_")
+        dt = dt.replace(":","")
+        if "text" in ty:
+            with open("resp{0}.txt".format(dt),"w+",encoding="utf-8") as f:
+                try:
+                    f.write(hb.beautify(respbody, 4))
+                except:
+                    f.write(respbody)
+        elif "JSON" in ty:
+            with open("resp{0}.html".format(dt),"w+",encoding = 'utf-8') as f:
+                build_direction = "LEFT_TO_RIGHT"
+                table_attributes = {"style": "width:100%"}
+                f.write(json2table.convert(respbody, 
+                         build_direction=build_direction, 
+                         table_attributes=table_attributes))
     except Exception as e:
         responseStatusCodeLabel.config(text="Response code: ERROR",bg="red")
         headerTree.delete(*headerTree.get_children())
