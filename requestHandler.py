@@ -4,9 +4,8 @@ class Request:
 
     def __init__(self,url):
         self.url = url
-        if "https://" not in self.url:
+        if "http://" not in self.url and "https://" not in self.url:
             self.url = "https://" + self.url
-
     def sndreq(self,reqtype,headers={},payload={}):
         response = requests.request(reqtype,url=self.url,headers=headers,data=payload)
         try : a = response.json()

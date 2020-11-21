@@ -21,7 +21,7 @@ def errBox(s):
 
 def wrMem(url,time,req,pay,respH,code="NA"):
     un = "*/^~%~^/*"
-    f = open("History.txt","a")
+    f = open("History/History.txt","a")
     if re.search('[a-zA-Z]', req): pass
     else:
         req = "NONE"
@@ -33,13 +33,13 @@ def wrMem(url,time,req,pay,respH,code="NA"):
         wr = wr + k+"^~"+v+"[^!`]"
     f.write(wr+"\n")
     f.close()
-    f = open("time.txt","a")
+    f = open("History/time.txt","a")
     f.write(time+"~/@/~" + url + "\n")
     f.close()
 
 def readMem(time):
     un = "*/^~%~^/*"
-    f = open("History.txt")
+    f = open("History/History.txt")
     for x in f:
         if time in x:
             # print("%%% x =",x)
@@ -60,8 +60,8 @@ def win1(event):
 
     def delH():
         try:
-            os.remove("History.txt")
-            os.remove("time.txt")
+            os.remove("History/History.txt")
+            os.remove("History/time.txt")
             ntbk.select(0)
 
         except:
@@ -69,35 +69,24 @@ def win1(event):
 
     def delsp():
         tx = requestOptionsH.get()
-        with open("time.txt") as f:
+        with open("History/time.txt") as f:
             s = list(f.read().split("\n"))
             for x in range(len(s)):
                 if tx in s[x]:
                     s[x] = ""
-        os.remove("time.txt")
+        os.remove("History/time.txt")
         s = '\n'.join(s)
         if re.search("[A-Za-z]",s):
             pass
         else:
-            os.remove("History.txt")
+            os.remove("History/History.txt")
             # window1.destroy()
             errBox("History empty!")
             return
-        with open("time.txt","w+") as f:
+        with open("History/time.txt","w+") as f:
             f.write(s)
 
         updateHistory()
-
-    # def updatedrpdwn(tx):
-    #     # print("%% tx =",tx,"type =",type(tx))
-    #     if tx in optionsH:
-    #         print("%% removed tx")
-    #         optionsH.remove(tx)
-    #         requestOptionsH['values'] = optionsH
-    #         requestOptions.current(0)
-    #         urlBoxH.delete("1.0",tk.END)
-    #         responseStatusCodeLabelH.config(text="Response code: NA",bg="orange")
-    #         headerTreeH.delete(*headerTreeH.get_children())
 
 
     def rspBody():
@@ -114,19 +103,19 @@ def win1(event):
         tx = "resp" + tx.replace(" ","_").replace(":","")
         if "text" in ty:
             try:
-                with open("{0}.txt".format(tx),encoding='utf-8') as f:
+                with open("ResponseBody/{0}.txt".format(tx),encoding='utf-8') as f:
                     ret = f.read()
-                    f1 = open("{0}.html".format(tx),"w+",encoding = 'utf-8')
+                    f1 = open("ResponseBody/{0}.html".format(tx),"w+",encoding = 'utf-8')
                     f1.write(ret)
-                    webbrowser.open('file://' + os.path.realpath("{0}.txt".format(tx)))
-                    webbrowser.open('file://' + os.path.realpath("{0}.html".format(tx)))
+                    webbrowser.open('file://' + os.path.realpath("ResponseBody/{0}.txt".format(tx)))
+                    webbrowser.open('file://' + os.path.realpath("ResponseBody/{0}.html".format(tx)))
             except Exception as e:
                 print(e)
-                errBox("File lost, please send request again")   
+                errBox("File lost, please send request again")
         elif "json" in ty:
-            webbrowser.open('file://' + os.path.realpath("{0}.html".format(tx)))
+            webbrowser.open('file://' + os.path.realpath("ResponseBody/{0}.html".format(tx)))
 
-                
+
     def copyclp():
         tx = requestOptionsH.get()
         time,url,req,pay,status_codeH,respH = readMem(tx)
@@ -143,7 +132,7 @@ def win1(event):
         time = time.replace(" ","_")
         time = time.replace(":","")
         s = "{"
-        with open("{0}.txt".format(time),"w") as f:
+        with open("ResponseHeaders/{0}.txt".format(time),"w") as f:
             for k,v in respH.items():
                 s = s + "\n" + k + ":" + v
             s = s+ "\n}"
@@ -188,7 +177,7 @@ def win1(event):
         return
     for child in window1.winfo_children():
         child.destroy()
-    if(path.isfile("time.txt")):
+    if(path.isfile("History/time.txt")):
         pass
     else:
         errBox("History empty!")
@@ -197,7 +186,7 @@ def win1(event):
     historyLabel = Label(window1,text="History",font="Arial 20 bold")
     historyLabel.place(x=600,y=10)
     # Request options
-    f = open("time.txt")
+    f = open("History/time.txt")
     optionsH = [i.split("~/@/~")[0] for i in f.read().split("\n") if len(i)>0]
     # print("%%% options =",optionsH,"\nlen =",len(optionsH))
     requestOptionsH = ttk.Combobox(window1,value=optionsH,width=22,font="Arial 11")
@@ -270,13 +259,6 @@ def win1(event):
     horscrlbarH = ttk.Scrollbar(f1,orient="horizontal")
     horscrlbarH.grid(row=1,column=0,sticky="EWNS")
 
-
-    # styleH = ttk.Style()
-    # #   style.configure("Treeview.Heading", font=("Arial", 11, "bold"))
-    # styleH.configure("mystyle.Treeview",font=('Calibri', 12),rowheight=20) # Modify the font of the body
-    # styleH.configure("mystyle.Treeview.Heading", font=('Calibri', 13,'bold')) # Modify the font of the headings
-    # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])
-    # Using treeview widget
     headerTreeH = ttk.Treeview(f1, selectmode ='browse',xscrollcommand=horscrlbarH.set,yscrollcommand=verscrlbarH.set,style="mystyle.Treeview")
     # Remove the borders
 
@@ -380,17 +362,17 @@ def sendRequest():
         dt = dt.replace(" ","_")
         dt = dt.replace(":","")
         if "text" in ty:
-            with open("resp{0}.txt".format(dt),"w+",encoding="utf-8") as f:
+            with open("ResponseBody/resp{0}.txt".format(dt),"w+",encoding="utf-8") as f:
                 try:
                     f.write(hb.beautify(respbody, 4))
                 except:
                     f.write(respbody)
         elif "JSON" in ty:
-            with open("resp{0}.html".format(dt),"w+",encoding = 'utf-8') as f:
+            with open("ResponseBody/resp{0}.html".format(dt),"w+",encoding = 'utf-8') as f:
                 build_direction = "LEFT_TO_RIGHT"
                 table_attributes = {"style": "width:100%"}
-                f.write(json2table.convert(respbody, 
-                         build_direction=build_direction, 
+                f.write(json2table.convert(respbody,
+                         build_direction=build_direction,
                          table_attributes=table_attributes))
     except Exception as e:
         responseStatusCodeLabel.config(text="Response code: ERROR",bg="red")
@@ -474,6 +456,10 @@ def clearPayload():
 def clearHint(event):
     event.widget.delete(0,tk.END)
     event.widget.config(fg="black")
+
+################################
+#              UI              #
+################################
 
 root = Tk()
 root.title("App")
